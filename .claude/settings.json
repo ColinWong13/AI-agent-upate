@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/colin/.claude/skills/Kira-product-monster-prd/**)",
+      "Read(//Users/colin/.claude/skills/Kira-product-monster-featurelist/**)"
+    ]
+  }
+}

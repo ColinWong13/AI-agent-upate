@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爬取任务调度流程图</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .mermaid {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>爬取任务调度流程</h1>
+        <div class="mermaid">
+            %%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#1F497D','primaryTextColor':'#fff','primaryBorderColor':'#3660A0','lineColor':'#5A6C7D','secondaryColor':'#4F81BD','tertiaryColor':'#E8A020'}}}%%
+            flowchart TD
+                Start([定时任务触发]) --> CheckSource{检查爬取源}
+                CheckSource -->|arXiv| CrawlArxiv[调用 arXiv API]
+                CheckSource -->|NeurIPS| CrawlNeurIPS[爬取 NeurIPS 页面]
+                CheckSource -->|ICLR| CrawlICLR[爬取 OpenReview API]
+                CheckSource -->|资讯源| CrawlNews[爬取 RSS 源]
+                CrawlArxiv --> Parse[解析响应数据]
+                CrawlNeurIPS --> Parse
+                CrawlICLR --> Parse
+                CrawlNews --> Parse
+                Parse --> CheckEmpty{数据是否为空?}
+                CheckEmpty -->|是| LogEmpty[记录日志: 无新内容]
+                CheckEmpty -->|否| Dedup{URL 是否已存在?}
+                Dedup -->|已存在| Skip[跳过该条]
+                Dedup -->|不存在| InsertDB[(写入数据库)]
+                InsertDB --> Count[累计入库数]
+                Skip --> MoreItems{还有待处理条目?}
+                Count --> MoreItems
+                MoreItems -->|是| Dedup
+                MoreItems -->|否| Summary[记录汇总日志]
+                LogEmpty --> End([结束])
+                Summary --> End
+                CrawlArxiv -.->|超时/异常| RetryCheck{重试次数 < 3?}
+                CrawlNeurIPS -.->|超时/异常| RetryCheck
+                CrawlICLR -.->|超时/异常| RetryCheck
+                CrawlNews -.->|超时/异常| RetryCheck
+                RetryCheck -->|是| WaitRetry[等待 30 分钟]
+                WaitRetry --> CheckSource
+                RetryCheck -->|否| AlertLog[记录告警日志]
+                AlertLog --> End
+        </div>
+    </div>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>

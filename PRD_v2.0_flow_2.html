@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户注册登录状态机图</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .mermaid {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>用户注册登录状态流转</h1>
+        <div class="mermaid">
+            %%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#1F497D','primaryTextColor':'#fff','primaryBorderColor':'#3660A0','lineColor':'#5A6C7D','secondaryColor':'#2d7a2d','tertiaryColor':'#E8A020'}}}%%
+            flowchart TD
+                UnAuth([未登录态]) --> VisitPage[访问任意页面]
+                VisitPage --> CanBrowse[可浏览竞品报告 / 论文 / 动态]
+                CanBrowse --> TryFav{点击收藏?}
+                TryFav -->|是| ShowTip[提示: 请先登录]
+                TryFav -->|否| CanBrowse
+
+                ShowTip --> GoLogin[跳转登录页]
+                UnAuth --> GoLogin
+                UnAuth --> GoRegister[跳转注册页]
+
+                GoRegister --> FillRegForm[填写昵称 / 邮箱 / 密码]
+                FillRegForm --> RegValidate{表单校验通过?}
+                RegValidate -->|否| ShowRegErr[提示具体错误字段]
+                ShowRegErr --> FillRegForm
+                RegValidate -->|是| RegSubmit[提交注册请求]
+                RegSubmit --> RegResult{服务端返回}
+                RegResult -->|成功: 该邮箱未被注册| Auth[(已登录态)]
+                RegResult -->|失败: 邮箱已存在| ShowRegConflict[提示: 该邮箱已被注册]
+                ShowRegConflict --> FillRegForm
+                RegResult -->|失败: 网络异常| ShowRegNetErr[提示: 网络异常, 请重试]
+                ShowRegNetErr --> FillRegForm
+
+                GoLogin --> FillLoginForm[填写邮箱 / 密码]
+                FillLoginForm --> LoginSubmit[提交登录请求]
+                LoginSubmit --> LoginResult{服务端返回}
+                LoginResult -->|成功| Auth
+                LoginResult -->|失败: 邮箱或密码错误| ShowLoginErr[提示: 邮箱或密码错误]
+                ShowLoginErr --> FillLoginForm
+                LoginResult -->|失败: 网络异常| ShowLoginNetErr[提示: 网络异常, 请重试]
+                ShowLoginNetErr --> FillLoginForm
+
+                Auth --> HasPerm[可收藏 / 添加笔记 / 访问个人中心]
+                Auth --> CheckToken{Token 是否到期?}
+                CheckToken -->|7 天内有效| HasPerm
+                CheckToken -->|到期| TokenExpired[自动退出登录]
+                TokenExpired --> UnAuth
+
+                Auth --> UserLogout[用户点击退出登录]
+                UserLogout --> ClearToken[清除本地 Token]
+                ClearToken --> UnAuth
+        </div>
+    </div>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>
