@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  app:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://aiagent:aiagent123@db:5432/ai_agent_platform
+      - DATABASE_URL_SYNC=postgresql+psycopg2://aiagent:aiagent123@db:5432/ai_agent_platform
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=change-this-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=aiagent
+      - POSTGRES_PASSWORD=aiagent123
+      - POSTGRES_DB=ai_agent_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiagent -d ai_agent_platform"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

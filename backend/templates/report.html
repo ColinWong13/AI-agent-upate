@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ section.title }} - AI Agent 竞品调研报告{% endblock %}
+{% set current_page = 'report' %}
+
+{% block hero %}
+<div class="hero">
+  <h1>{{ section.title }}</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+{% if section %}
+<div class="section" id="{{ section.section_key }}">
+  {{ section.content_json.html | safe }}
+</div>
+<div style="margin-top:32px;">
+  <a href="/report" style="color:var(--blue-mid);text-decoration:none;font-weight:600;">&larr; 返回完整报告</a>
+</div>
+{% else %}
+<p class="body-text">章节不存在。</p>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}AI Agent 竞品调研报告{% endblock %}
+{% set current_page = 'home' %}
+
+{% block hero %}
+<div class="hero">
+  <h1>AI Agent 竞品调研报告</h1>
+  <p>深度解析主流 Agent 平台与垂直领域竞品格局</p>
+  <div class="meta">
+    <span class="badge">&#x1F4C5; 2026年4月</span>
+    <span class="badge">&#x1F50D; 内部研究文档</span>
+    <span class="badge">&#x1F4CA; Data / Finance / Research Agent</span>
+    <span class="badge">&#x1F6E0; Claude Code 配置指南</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+{% for section in sections %}
+<div class="section" id="{{ section.section_key }}">
+  <div class="section-title">{{ section.title }}</div>
+  {{ section.content_json.html | safe }}
+</div>
+{% endfor %}
+</div>
+{% endblock %}

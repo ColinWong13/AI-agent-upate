@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}AI Agent 竞品调研报告{% endblock %}</title>
+<link rel="stylesheet" href="/static/style.css">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <span class="logo"><a href="/">AI Agent Platform</a></span>
+  <a href="/" class="{% if current_page == 'home' %}active{% endif %}">首页</a>
+  <a href="/report" class="{% if current_page == 'report' %}active{% endif %}">竞品报告</a>
+  <a href="/papers" class="{% if current_page == 'papers' %}active{% endif %}">学术板块</a>
+  <a href="/news" class="{% if current_page == 'news' %}active{% endif %}">行业动态</a>
+</nav>
+
+{% block hero %}{% endblock %}
+
+{% block content %}{% endblock %}
+
+<footer>
+  <p>AI Agent 竞品调研报告 · 数据持续更新 · 内部研究文档</p>
+  <p style="margin-top:6px;">数据来源：Gartner、IDC、各厂商官方披露、Terminal-Bench 2.0、GAIA Benchmark</p>
+</footer>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
