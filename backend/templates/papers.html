@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}学术板块 - AI Agent Platform{% endblock %}
+{% set current_page = 'papers' %}
+
+{% block hero %}
+<div class="hero">
+  <h1>学术板块</h1>
+  <p>自动汇聚顶级学术会议与预印本最新论文</p>
+  <div class="meta">
+    <span class="badge">arXiv</span>
+    <span class="badge">NeurIPS</span>
+    <span class="badge">ICLR</span>
+    <span class="badge">每日更新</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- filter bar -->
+  <form method="get" action="/papers" class="filter-bar" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;align-items:center;">
+    <select name="source" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
+      <option value="">全部来源</option>
+      <option value="arxiv" {% if source == 'arxiv' %}selected{% endif %}>arXiv</option>
+      <option value="neurips" {% if source == 'neurips' %}selected{% endif %}>NeurIPS</option>
+      <option value="iclr" {% if source == 'iclr' %}selected{% endif %}>ICLR</option>
+    </select>
+    <input type="text" name="keyword" value="{{ keyword or '' }}" placeholder="搜索标题或摘要..." style="flex:1;min-width:200px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
+    <button type="submit" style="padding:6px 18px;background:var(--blue-dark);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">搜索</button>
+  </form>
+
+  {% if papers %}
+  <!-- paper list -->
+  <div class="paper-list">
+    {% for p in papers %}
+    <a href="/papers/{{ p.id }}" class="paper-card" style="display:block;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s;box-shadow:var(--shadow);">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <span class="paper-source source-{{ p.source }}" style="flex-shrink:0;display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;{% if p.source == 'arxiv' %}background:#dce6f1;color:#1F497D;{% elif p.source == 'neurips' %}background:#d4edda;color:#155724;{% else %}background:#fff3cd;color:#856404;{% endif %}">{{ p.source.upper() }}</span>
+        <div style="flex:1;min-width:0;">
+          <div class="paper-title" style="font-weight:700;font-size:15px;color:var(--blue-dark);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ p.title }}</div>
+          <div class="paper-meta" style="font-size:13px;color:var(--text-light);margin-bottom:6px;">
+            {{ p.authors[:3] | join(', ') }}{% if p.authors | length > 3 %} 等{% endif %}
+            <span style="margin:0 8px;">·</span>
+            {{ p.published_date }}
+          </div>
+          <div class="paper-abstract" style="font-size:13px;color:var(--text-light);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{{ p.abstract }}</div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- paginator -->
+  {% set total_pages = ((total + 19) // 20) | int %}
+  {% if total_pages > 1 %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:24px;">
+    {% if page > 1 %}
+    <a href="/papers?source={{ source or '' }}&keyword={{ keyword or '' }}&page={{ page - 1 }}" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--blue-mid);">上一页</a>
+    {% endif %}
+    <span style="padding:6px 14px;color:var(--text-light);">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="/papers?source={{ source or '' }}&keyword={{ keyword or '' }}&page={{ page + 1 }}" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--blue-mid);">下一页</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <!-- empty state -->
+  <div style="text-align:center;padding:60px 20px;color:var(--text-light);">
+    <div style="font-size:48px;margin-bottom:16px;">&#x1F4DA;</div>
+    <div style="font-size:16px;margin-bottom:8px;">暂无符合条件的论文</div>
+    <div style="font-size:14px;">尝试更换筛选条件，或等待下次数据更新</div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
