@@ -10,7 +10,7 @@ from sqlalchemy import select
 from database import init_db, get_db
 from models.report import ReportSection
 from models.paper import Paper
-from routers import report, paper
+from routers import report, paper, news
 
 env = Environment(loader=FileSystemLoader("templates"))
 
@@ -29,11 +29,12 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
-app = FastAPI(title="AI Agent Platform", version="2.1.0", lifespan=lifespan)
+app = FastAPI(title="AI Agent Platform", version="2.2.0", lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(report.router)
 app.include_router(paper.router)
+app.include_router(news.router)
 
 
 async def get_all_sections(db: AsyncSession):
@@ -106,12 +107,46 @@ async def page_paper_detail(paper_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @app.get("/news", response_class=HTMLResponse)
-async def page_news():
-    return render("base.html", current_page="news")
+async def page_news(
+    category: str | None = None,
+    page: int = 1,
+    db: AsyncSession = Depends(get_db),
+):
+    from models.news import NewsItem
+    q = select(NewsItem)
+    if category:
+        q = q.where(NewsItem.category == category)
+    q = q.order_by(NewsItem.published_date.desc(), NewsItem.id.desc())
+    q = q.offset((page - 1) * 20).limit(20)
+    result = await db.execute(q)
+    items = result.scalars().all()
+
+    from sqlalchemy import func
+    count_q = select(func.count()).select_from(NewsItem)
+    if category:
+        count_q = count_q.where(NewsItem.category == category)
+    total = (await db.execute(count_q)).scalar() or 0
+
+    # Get distinct categories
+    cat_result = await db.execute(select(NewsItem.category).distinct())
+    categories = sorted([r[0] for r in cat_result if r[0]])
+
+    return render("news.html", news_items=items, categories=categories,
+                  active_category=category, page=page, total=total, current_page="news")
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def page_admin(db: AsyncSession = Depends(get_db)):
+    from models.news import NewsItem
+    result = await db.execute(
+        select(NewsItem).order_by(NewsItem.published_date.desc()).limit(50)
+    )
+    items = result.scalars().all()
+    return render("admin.html", items=items, current_page="")
 
 
 # -- health --
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "version": "2.1.0"}
+    return {"status": "ok", "version": "2.2.0"}
