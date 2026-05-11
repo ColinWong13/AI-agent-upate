@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}The Agent Report — AI 领域前沿资讯平台{% endblock %}
+{% set current_page = 'home' %}
+
+{% block hero %}
+<div class="hero">
+  <h1>All the News<br>That's Fit to Print</h1>
+  <p>追踪 AI 领域顶级学术论文、行业动态与竞品格局</p>
+  <div class="meta">
+    <span class="badge">Vol. 2 · {{ now.strftime('%Y.%m.%d') if now else '' }}</span>
+    <span class="badge">学术追踪</span>
+    <span class="badge">行业聚合</span>
+    <span class="badge">竞品分析</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- stats row -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);margin-bottom:48px;">
+    <div class="stat-card" style="border-right:1px solid var(--border);">
+      <div class="stat-number" style="color:var(--fg);">{{ paper_count }}</div>
+      <div class="stat-label">Papers Indexed</div>
+    </div>
+    <div class="stat-card" style="border-right:1px solid var(--border);">
+      <div class="stat-number" style="color:var(--fg);">{{ news_count }}</div>
+      <div class="stat-label">News Briefs</div>
+    </div>
+    <div class="stat-card" style="border-right:1px solid var(--border);">
+      <div class="stat-number" style="color:var(--fg);">{{ section_count }}</div>
+      <div class="stat-label">Report Sections</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" style="color:var(--fg);">{{ user_count }}</div>
+      <div class="stat-label">Subscribers</div>
+    </div>
+  </div>
+
+  <!-- ornament -->
+  <div class="ornament">&#x2727;</div>
+
+  <!-- about -->
+  <div style="max-width:680px;margin:0 auto 48px;text-align:center;">
+    <p style="font-family:var(--font-body);color:var(--neutral-600);font-size:15px;line-height:2;font-style:italic;">
+      The Agent Report 面向 AI 从业者与研究者打造。每日自动追踪顶级学术来源的最新论文，
+      聚合行业前沿动态，提供深度的 AI Agent 竞品分析报告。支持个人收藏与笔记管理，
+      构建你的 AI 知识体系。
+    </p>
+  </div>
+
+  <!-- ornament -->
+  <div class="ornament">&#x2727; &#x2727; &#x2727;</div>
+
+  <!-- feature links -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));border:1px solid var(--border);">
+    <a href="/report" class="feature-card" style="border-right:1px solid var(--border);">
+      <div class="fc-icon" style="font-family:var(--font-display);font-size:2rem;">I.</div>
+      <div class="fc-title">竞品深度分析</div>
+      <div class="fc-desc">深度解析主流 Agent 平台与三大垂直赛道（Data / Finance / Research）竞争格局</div>
+    </a>
+    <a href="/papers" class="feature-card" style="border-right:1px solid var(--border);">
+      <div class="fc-icon" style="font-family:var(--font-display);font-size:2rem;">II.</div>
+      <div class="fc-title">学术论文板块</div>
+      <div class="fc-desc">自动汇聚 arXiv · NeurIPS · ICML · CVPR · ACL 等顶刊最新论文，支持搜索与筛选</div>
+    </a>
+    <a href="/news" class="feature-card">
+      <div class="fc-icon" style="font-family:var(--font-display);font-size:2rem;">III.</div>
+      <div class="fc-title">行业动态追踪</div>
+      <div class="fc-desc">持续收录 AI 领域资讯、视频周报与开源动态，一站掌握前沿信息</div>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

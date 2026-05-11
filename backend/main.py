@@ -60,9 +60,15 @@ async def get_favorites_map(db: AsyncSession, user: User, item_type: str) -> set
 # -- HTML page routes (user is optional, injected for nav state) --
 
 @app.get("/", response_class=HTMLResponse)
-async def page_index(user: User | None = Depends(current_user), db: AsyncSession = Depends(get_db)):
-    sections = await get_all_sections(db)
-    return render("index.html", sections=sections, current_page="home", user=user)
+async def page_home(user: User | None = Depends(current_user), db: AsyncSession = Depends(get_db)):
+    from models.news import NewsItem
+    paper_count = (await db.execute(select(func.count(Paper.id)))).scalar() or 0
+    news_count = (await db.execute(select(func.count(NewsItem.id)))).scalar() or 0
+    section_count = (await db.execute(select(func.count(ReportSection.id)))).scalar() or 0
+    user_count = (await db.execute(select(func.count(User.id)))).scalar() or 0
+    return render("home.html", current_page="home", user=user,
+                  paper_count=paper_count, news_count=news_count,
+                  section_count=section_count, user_count=user_count)
 
 
 @app.get("/report", response_class=HTMLResponse)

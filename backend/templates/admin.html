@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}后台管理 - AI Agent Platform{% endblock %}
+{% block title %}后台管理 — The Agent Report{% endblock %}
 {% set current_page = '' %}
 
 {% block hero %}
 <div class="hero" style="padding:36px 32px;">
-  <h1 style="font-size:1.4rem;">后台管理</h1>
+  <h1 style="font-size:1.3rem;">后台管理</h1>
   <p>管理行业动态条目</p>
 </div>
 {% endblock %}
@@ -12,40 +12,38 @@
 {% block content %}
 <div class="container" style="max-width:700px;">
 
-  <!-- add form -->
-  <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:32px;box-shadow:var(--shadow);">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:32px;box-shadow:var(--shadow);">
     <div class="section-subtitle" style="margin-top:0;">添加新动态</div>
-    <form method="post" action="/api/news" id="addForm" style="display:flex;flex-direction:column;gap:12px;">
-      <input name="source_name" placeholder="来源名称 (如: 机器之心)" required style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
-      <input name="title" placeholder="标题" required style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
-      <textarea name="summary" placeholder="摘要" rows="3" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;"></textarea>
-      <input name="url" placeholder="链接 URL" required style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
-      <select name="category" style="padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;">
+    <form id="addForm" style="display:flex;flex-direction:column;gap:12px;">
+      <input name="source_name" placeholder="来源名称" required style="padding:9px 14px;border-radius:var(--radius-sm);font-size:13px;">
+      <input name="title" placeholder="标题" required style="padding:9px 14px;border-radius:var(--radius-sm);font-size:13px;">
+      <textarea name="summary" placeholder="摘要" rows="3" style="padding:9px 14px;border-radius:var(--radius-sm);font-size:13px;"></textarea>
+      <input name="url" placeholder="链接 URL" required style="padding:9px 14px;border-radius:var(--radius-sm);font-size:13px;">
+      <select name="category" style="padding:9px 14px;border-radius:var(--radius-sm);font-size:13px;">
         <option value="">选择分类</option>
         <option value="行业资讯">行业资讯</option>
         <option value="学术资讯">学术资讯</option>
         <option value="视频周报">视频周报</option>
         <option value="开源动态">开源动态</option>
       </select>
-      <button type="submit" style="padding:8px;background:var(--blue-dark);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">添加</button>
+      <button type="submit" class="btn btn-primary" style="justify-content:center;">添加</button>
     </form>
-    <div id="addMsg" style="margin-top:8px;font-size:13px;"></div>
+    <div id="addMsg" style="margin-top:10px;font-size:12px;"></div>
   </div>
 
-  <!-- existing items -->
   <div class="section-subtitle">已有动态 ({{ items|length }})</div>
   {% if items %}
   {% for n in items %}
-  <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow);">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow);">
     <div style="flex:1;min-width:0;">
-      <div style="font-weight:600;font-size:14px;color:var(--blue-dark);">{{ n.title }}</div>
-      <div style="font-size:12px;color:var(--text-light);">{{ n.source_name }} · {{ n.category }} · {{ n.published_date }}</div>
+      <div style="font-weight:600;font-size:14px;color:var(--text-primary);">{{ n.title }}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ n.source_name }} · {{ n.category }} · {{ n.published_date }}</div>
     </div>
-    <button onclick="deleteNews({{ n.id }})" style="padding:4px 10px;border:1px solid #a04040;color:#a04040;background:none;border-radius:4px;cursor:pointer;font-size:12px;flex-shrink:0;margin-left:12px;">删除</button>
+    <button onclick="deleteNews({{ n.id }})" style="padding:4px 12px;border:1px solid rgba(248,113,113,0.3);color:#f87171;background:none;border-radius:6px;cursor:pointer;font-size:11px;flex-shrink:0;margin-left:12px;">删除</button>
   </div>
   {% endfor %}
   {% else %}
-  <div style="text-align:center;padding:30px;color:var(--text-light);font-size:14px;">暂无动态</div>
+  <div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">暂无动态</div>
   {% endif %}
 
 </div>
@@ -55,31 +53,13 @@ document.getElementById('addForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
   const msg = document.getElementById('addMsg');
-  const data = {
-    source_name: form.source_name.value,
-    title: form.title.value,
-    summary: form.summary.value,
-    url: form.url.value,
-    category: form.category.value,
-  };
+  const data = {source_name: form.source_name.value, title: form.title.value, summary: form.summary.value, url: form.url.value, category: form.category.value};
   try {
-    const resp = await fetch('/api/news', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(data),
-    });
-    if (resp.ok) {
-      msg.innerHTML = '<span style="color:#2d7a2d;">添加成功！刷新页面查看</span>';
-      form.reset();
-    } else {
-      const err = await resp.json();
-      msg.innerHTML = '<span style="color:#a04040;">' + (err.detail || '添加失败') + '</span>';
-    }
-  } catch(err) {
-    msg.innerHTML = '<span style="color:#a04040;">网络错误</span>';
-  }
+    const resp = await fetch('/api/news', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+    if (resp.ok) { msg.innerHTML = '<span style="color:var(--accent-3);">添加成功！刷新查看</span>'; form.reset(); }
+    else { const err = await resp.json(); msg.innerHTML = '<span style="color:#f87171;">' + (err.detail || '失败') + '</span>'; }
+  } catch(err) { msg.innerHTML = '<span style="color:#f87171;">网络错误</span>'; }
 });
-
 async function deleteNews(id) {
   if (!confirm('确定删除？')) return;
   const resp = await fetch('/api/news/' + id, {method: 'DELETE'});

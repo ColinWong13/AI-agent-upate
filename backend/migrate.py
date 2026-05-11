@@ -41,8 +41,12 @@ def extract_sections() -> list[dict]:
             print(f"  WARN: section id='{section_id}' not found, skipping")
             continue
 
-        # If it's a div.section, extract its inner HTML
-        inner = "".join(str(c) for c in el.contents)
+        # Extract inner HTML and strip the section-title div (template adds it)
+        inner_soup = BeautifulSoup("".join(str(c) for c in el.contents), "lxml")
+        title_div = inner_soup.find("div", class_="section-title")
+        if title_div:
+            title_div.decompose()
+        inner = "".join(str(c) for c in inner_soup.contents)
         # For sections that are wrappers (like data), include the video section wrapper etc.
         # The news section has an outer wrapping div, grab more context
         if section_id == "news":

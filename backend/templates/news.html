@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}行业动态 - AI Agent Platform{% endblock %}
+{% block title %}行业动态 — The Agent Report{% endblock %}
 {% set current_page = 'news' %}
 
 {% block hero %}
@@ -8,7 +8,7 @@
   <p>AI 领域最新资讯与视频内容追踪</p>
   <div class="meta">
     {% for cat in categories %}
-    <a href="/news?category={{ cat }}" class="badge" style="text-decoration:none;color:#fff;">{{ cat }}</a>
+    <a href="/news?category={{ cat }}" class="badge" style="text-decoration:none;">{{ cat }}</a>
     {% endfor %}
   </div>
 </div>
@@ -17,21 +17,19 @@
 {% block content %}
 <div class="container">
 
-  <!-- source buttons -->
-  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px;align-items:center;">
+  <div style="display:flex;flex-wrap:wrap;gap:0;margin-bottom:24px;align-items:center;border:1px solid var(--border);">
     {% set active = active_category or '' %}
-    <a href="/news" class="btn-filter" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;{% if not active %}background:var(--blue-dark);color:#fff;{% else %}border:1px solid var(--border);color:var(--text-light);{% endif %}">全部</a>
+    <a href="/news" class="btn-filter" style="padding:8px 16px;text-decoration:none;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;border-right:1px solid var(--border);{% if not active %}background:var(--fg);color:var(--bg);{% else %}background:transparent;color:var(--neutral-600);{% endif %}">全部</a>
     {% for cat in categories %}
-    <a href="/news?category={{ cat }}" class="btn-filter" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;{% if active == cat %}background:var(--blue-dark);color:#fff;{% else %}border:1px solid var(--border);color:var(--text-light);{% endif %}">{{ cat }}</a>
+    <a href="/news?category={{ cat }}" class="btn-filter" style="padding:8px 16px;text-decoration:none;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;border-right:1px solid var(--border);{% if active == cat %}background:var(--fg);color:var(--bg);{% else %}background:transparent;color:var(--neutral-600);{% endif %}">{{ cat }}</a>
     {% endfor %}
   </div>
 
-  <!-- news from DB -->
   {% if news_items %}
   <div class="news-grid">
     {% for n in news_items %}
     <a href="{{ n.url }}" target="_blank" rel="noopener" class="news-card">
-      <div class="news-header" style="background:linear-gradient(135deg,{% if n.category == '视频周报' %}#c0392b,#e74c3c{% elif n.category == '学术资讯' %}#1F497D,#3660A0{% else %}#3660A0,#4F81BD{% endif %});">
+      <div class="news-header">
         <div class="news-icon">{% if n.category == '视频周报' %}&#x1F3AC;{% else %}&#x1F4F0;{% endif %}</div>
         <div class="news-meta">
           <h3>{{ n.title }}</h3>
@@ -46,65 +44,52 @@
     {% endfor %}
   </div>
 
-  <!-- paginator -->
   {% set total_pages = ((total + 19) // 20) | int %}
   {% if total_pages > 1 %}
-  <div style="display:flex;justify-content:center;gap:8px;margin-top:24px;">
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:28px;">
     {% if page > 1 %}
-    <a href="/news?category={{ active }}&page={{ page - 1 }}" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--blue-mid);">上一页</a>
+    <a href="/news?category={{ active }}&page={{ page - 1 }}" class="btn btn-outline" style="padding:6px 16px;font-size:13px;">上一页</a>
     {% endif %}
-    <span style="padding:6px 14px;color:var(--text-light);">{{ page }} / {{ total_pages }}</span>
+    <span style="padding:6px 16px;color:var(--text-secondary);font-size:13px;">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="/news?category={{ active }}&page={{ page + 1 }}" style="padding:6px 14px;border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--blue-mid);">下一页</a>
+    <a href="/news?category={{ active }}&page={{ page + 1 }}" class="btn btn-outline" style="padding:6px 16px;font-size:13px;">下一页</a>
     {% endif %}
   </div>
   {% endif %}
 
   {% else %}
-  <div style="text-align:center;padding:40px 20px;color:var(--text-light);">
-    <div style="font-size:14px;">暂无动态，等待管理员更新</div>
-  </div>
+  <div style="text-align:center;padding:40px 20px;color:var(--text-secondary);font-size:14px;">暂无动态，等待管理员更新</div>
   {% endif %}
 
-  <!-- fixed source cards -->
-  <div class="section-subtitle" style="margin-top:40px;">常用信息源</div>
+  <div class="section-subtitle" style="margin-top:44px;">常用信息源</div>
   <div class="news-grid">
     <a class="news-card" href="https://www.cdut.edu.cn/aixxh/index.htm" target="_blank" rel="noopener">
-      <div class="news-header" style="background:linear-gradient(135deg,#1F497D,#3660A0);">
+      <div class="news-header">
         <div class="news-icon">&#x1F4F0;</div>
-        <div class="news-meta">
-          <h3>AI 学习荟萃</h3>
-          <p>成都理工大学 · 持续更新</p>
-        </div>
+        <div class="news-meta"><h3>AI 学习荟萃</h3><p>成都理工大学 · 持续更新</p></div>
       </div>
       <div class="news-body">
-        <div class="news-desc">汇聚 AI 领域前沿资讯、学术论文解读、行业报告摘要与技术动态，覆盖大模型、Agent、多模态等核心方向。</div>
-        <div class="news-link-btn">前往查看最新动态 →</div>
+        <div class="news-desc">汇聚 AI 领域前沿资讯、学术论文解读、行业报告摘要与技术动态。</div>
+        <div class="news-link-btn">前往查看 →</div>
       </div>
     </a>
     <a class="news-card" href="https://space.bilibili.com/65564239/lists/1982929?type=season" target="_blank" rel="noopener">
-      <div class="news-header" style="background:linear-gradient(135deg,#24292e,#3a4a5c);">
+      <div class="news-header">
         <div class="news-icon">&#x1F4FA;</div>
-        <div class="news-meta">
-          <h3>GitHub 一周热点汇总</h3>
-          <p>Bilibili · 每周更新</p>
-        </div>
+        <div class="news-meta"><h3>GitHub 一周热点汇总</h3><p>Bilibili · 每周更新</p></div>
       </div>
       <div class="news-body">
-        <div class="news-desc">每周精选 GitHub 上最受关注的开源项目、AI 工具与开发者工具，快速掌握开源社区动向。</div>
+        <div class="news-desc">每周精选 GitHub 上最受关注的开源项目、AI 工具与开发者工具。</div>
         <div class="news-link-btn">前往播放列表 →</div>
       </div>
     </a>
     <a class="news-card" href="https://space.bilibili.com/103118875/lists/1982480?type=season" target="_blank" rel="noopener">
-      <div class="news-header" style="background:linear-gradient(135deg,#1F497D,#E8A020);">
+      <div class="news-header">
         <div class="news-icon">&#x1F4FA;</div>
-        <div class="news-meta">
-          <h3>AI 大模型周报</h3>
-          <p>Bilibili · 每周更新</p>
-        </div>
+        <div class="news-meta"><h3>AI 大模型周报</h3><p>Bilibili · 每周更新</p></div>
       </div>
       <div class="news-body">
-        <div class="news-desc">每周梳理大模型领域重要进展：新模型发布、能力评测、应用落地案例、行业融资动态。</div>
+        <div class="news-desc">每周梳理大模型领域重要进展：新模型发布、能力评测、应用落地案例。</div>
         <div class="news-link-btn">前往播放列表 →</div>
       </div>
     </a>

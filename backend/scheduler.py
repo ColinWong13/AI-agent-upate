@@ -6,7 +6,7 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from crawlers import arxiv, neurips, iclr
+from crawlers import arxiv, neurips, iclr, icml, acl, cvpr
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +41,35 @@ def start():
         replace_existing=True,
     )
 
+    # ICML: every Monday at 11:00 Beijing time (UTC 03:00)
+    scheduler.add_job(
+        icml.crawl,
+        CronTrigger(day_of_week="mon", hour=3, minute=7),
+        id="icml_weekly",
+        name="ICML weekly crawl",
+        replace_existing=True,
+    )
+
+    # ACL: every Monday at 12:00 Beijing time (UTC 04:00)
+    scheduler.add_job(
+        acl.crawl,
+        CronTrigger(day_of_week="mon", hour=4, minute=7),
+        id="acl_weekly",
+        name="ACL weekly crawl",
+        replace_existing=True,
+    )
+
+    # CVPR: every Monday at 13:00 Beijing time (UTC 05:00)
+    scheduler.add_job(
+        cvpr.crawl,
+        CronTrigger(day_of_week="mon", hour=5, minute=7),
+        id="cvpr_weekly",
+        name="CVPR weekly crawl",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started: arxiv daily, neurips/iclr weekly")
+    logger.info("Scheduler started: arxiv daily, neurips/iclr/icml/acl/cvpr weekly")
 
 
 def shutdown():
