@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}我的收藏 - AI Agent Platform{% endblock %}
+
+{% block hero %}
+<div class="hero" style="padding:36px 32px;">
+  <h1 style="font-size:1.4rem;">我的收藏</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:700px;">
+  <div style="display:flex;gap:10px;margin-bottom:20px;">
+    <a href="/favorites" class="btn-filter" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;background:var(--blue-dark);color:#fff;">全部</a>
+    <a href="/favorites?type=paper" class="btn-filter" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;border:1px solid var(--border);color:var(--text-light);">论文</a>
+    <a href="/favorites?type=news" class="btn-filter" style="padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px;border:1px solid var(--border);color:var(--text-light);">动态</a>
+  </div>
+
+  {% if favorites %}
+  {% for f in favorites %}
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow);">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:12px;color:var(--text-light);margin-bottom:2px;">
+        {% if f.item_type == 'paper' %}<span style="background:#dce6f1;color:#1F497D;padding:1px 6px;border-radius:3px;font-size:11px;">论文</span>
+        {% else %}<span style="background:#d4edda;color:#155724;padding:1px 6px;border-radius:3px;font-size:11px;">动态</span>{% endif %}
+      </div>
+      <div style="font-weight:600;font-size:14px;color:var(--blue-dark);">{{ f.title }}</div>
+      <div style="font-size:12px;color:var(--text-light);">{{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0;margin-left:12px;">
+      <a href="/{{ 'papers' if f.item_type == 'paper' else 'news' }}/{{ f.item_id }}" style="font-size:12px;color:var(--blue-mid);text-decoration:none;">查看</a>
+      <button onclick="removeFav({{ f.id }})" style="padding:2px 8px;border:1px solid #a04040;color:#a04040;background:none;border-radius:4px;cursor:pointer;font-size:11px;">取消收藏</button>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div style="text-align:center;padding:60px 20px;color:var(--text-light);">
+    <div style="font-size:16px;">暂无收藏，去<a href="/papers" style="color:var(--blue-mid);">学术板块</a>或<a href="/news" style="color:var(--blue-mid);">行业动态</a>逛逛吧</div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+async function removeFav(id) {
+  if (!confirm('确定取消收藏？')) return;
+  const token = localStorage.getItem('token');
+  const resp = await fetch('/api/user/favorites/' + id, {
+    method: 'DELETE',
+    headers: {'Authorization': 'Bearer ' + token},
+  });
+  if (resp.ok) location.reload();
+}
+</script>
+{% endblock %}

@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}AI Agent 竞品调研报告{% endblock %}</title>
 <link rel="stylesheet" href="/static/style.css">
+<style>
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.nav-right .nav-btn { color: rgba(255,255,255,.75); text-decoration: none; font-size: 12px; padding: 3px 8px; border-radius: 4px; transition: all .2s; }
+.nav-right .nav-btn:hover { color: #fff; background: rgba(255,255,255,.15); }
+.nav-right .nav-user { color: #fff; font-size: 12px; font-weight: 600; position: relative; cursor: pointer; padding: 3px 8px; }
+.nav-right .nav-dropdown { display: none; position: absolute; top: 100%; right: 0; background: #fff; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.15); min-width: 120px; z-index: 200; }
+.nav-right .nav-user:hover .nav-dropdown { display: block; }
+.nav-right .nav-dropdown a { display: block; padding: 8px 14px; color: var(--text); text-decoration: none; font-size: 13px; white-space: nowrap; }
+.nav-right .nav-dropdown a:hover { background: var(--blue-pale); }
+.nav-right .nav-dropdown .nav-logout { color: #a04040; cursor: pointer; padding: 8px 14px; font-size: 13px; display: block; }
+.nav-right .nav-dropdown .nav-logout:hover { background: #fef0f0; }
+</style>
 {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -15,7 +27,23 @@
   <a href="/report" class="{% if current_page == 'report' %}active{% endif %}">竞品报告</a>
   <a href="/papers" class="{% if current_page == 'papers' %}active{% endif %}">学术板块</a>
   <a href="/news" class="{% if current_page == 'news' %}active{% endif %}">行业动态</a>
-  <a href="/admin" style="margin-left:auto;opacity:0.6;font-size:11px;">管理</a>
+
+  <div class="nav-right">
+    {% if user %}
+    <div class="nav-user">
+      {{ user.nickname }}
+      <div class="nav-dropdown">
+        <a href="/favorites">我的收藏</a>
+        <a href="/notes">我的笔记</a>
+        <span class="nav-logout" onclick="logout()">退出登录</span>
+      </div>
+    </div>
+    {% else %}
+    <a href="/login" class="nav-btn">登录</a>
+    <a href="/register" class="nav-btn" style="background:rgba(255,255,255,.2);">注册</a>
+    {% endif %}
+    <a href="/admin" style="opacity:0.5;font-size:11px;">管理</a>
+  </div>
 </nav>
 
 {% block hero %}{% endblock %}
@@ -27,6 +55,12 @@
   <p style="margin-top:6px;">数据来源：Gartner、IDC、各厂商官方披露、Terminal-Bench 2.0、GAIA Benchmark</p>
 </footer>
 
+<script>
+function logout() {
+  localStorage.removeItem('token');
+  window.location.href = '/';
+}
+</script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -46,6 +46,9 @@
           </div>
           <div class="paper-abstract" style="font-size:13px;color:var(--text-light);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{{ p.abstract }}</div>
         </div>
+        {% if user %}
+        <button class="fav-btn" data-id="{{ p.id }}" data-type="paper" onclick="toggleFav(this, event)" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:18px;padding:4px;{% if p.id in favorites %}color:#E8A020;{% else %}color:#ccc;{% endif %}" title="{% if p.id in favorites %}取消收藏{% else %}收藏{% endif %}">&#9733;</button>
+        {% endif %}
       </div>
     </a>
     {% endfor %}
@@ -75,4 +78,31 @@
   {% endif %}
 
 </div>
+<script>
+async function toggleFav(btn, e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const token = localStorage.getItem('token');
+  if (!token) { alert('请先登录'); return; }
+  const id = btn.dataset.id;
+  const type = btn.dataset.type;
+  const isFav = btn.style.color === 'rgb(232, 160, 32)';
+  if (isFav) {
+    const resp = await fetch('/api/user/favorites?item_type=' + type, { headers: {'Authorization': 'Bearer ' + token} });
+    const favs = await resp.json();
+    const match = favs.find(f => f.item_id == id && f.item_type == type);
+    if (match) {
+      await fetch('/api/user/favorites/' + match.id, { method: 'DELETE', headers: {'Authorization': 'Bearer ' + token} });
+    }
+    btn.style.color = '#ccc';
+  } else {
+    const resp = await fetch('/api/user/favorites', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify({item_type: type, item_id: parseInt(id)}),
+    });
+    if (resp.ok) btn.style.color = '#E8A020';
+  }
+}
+</script>
 {% endblock %}

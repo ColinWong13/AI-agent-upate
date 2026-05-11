@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}我的笔记 - AI Agent Platform{% endblock %}
+
+{% block hero %}
+<div class="hero" style="padding:36px 32px;">
+  <h1 style="font-size:1.4rem;">我的笔记</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:700px;">
+
+  {% if notes %}
+  {% for n in notes %}
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px;box-shadow:var(--shadow);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:4px;">
+          <span style="background:#dce6f1;color:#1F497D;padding:1px 6px;border-radius:3px;font-size:11px;">论文</span>
+          <span style="margin-left:6px;">{{ n.updated_at.strftime('%Y-%m-%d %H:%M') if n.updated_at else '' }}</span>
+        </div>
+        <a href="/papers/{{ n.item_id }}" style="font-weight:600;font-size:14px;color:var(--blue-dark);text-decoration:none;">{{ n.title }}</a>
+        <div style="font-size:13px;color:var(--text-light);margin-top:8px;white-space:pre-wrap;">{{ n.content }}</div>
+      </div>
+      <button onclick="deleteNote({{ n.id }})" style="flex-shrink:0;margin-left:12px;padding:4px 10px;border:1px solid #a04040;color:#a04040;background:none;border-radius:4px;cursor:pointer;font-size:11px;">删除</button>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div style="text-align:center;padding:60px 20px;color:var(--text-light);">
+    <div style="font-size:16px;">暂无笔记</div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+async function deleteNote(id) {
+  if (!confirm('确定删除该笔记？')) return;
+  const token = localStorage.getItem('token');
+  const resp = await fetch('/api/user/notes/' + id, {
+    method: 'DELETE',
+    headers: {'Authorization': 'Bearer ' + token},
+  });
+  if (resp.ok) location.reload();
+}
+</script>
+{% endblock %}

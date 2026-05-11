@@ -17,28 +17,96 @@
 <div class="container">
   <div style="max-width:800px;margin:0 auto;">
 
-    <!-- authors -->
     <div class="section-subtitle">作者</div>
     <p class="body-text">{{ paper.authors | join(', ') }}</p>
 
-    <!-- abstract -->
     <div class="section-subtitle">摘要</div>
     <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;line-height:1.8;font-size:14px;color:var(--text-light);">{{ paper.abstract }}</div>
 
     <!-- actions -->
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
       {% if paper.url %}
-      <a href="{{ paper.url }}" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;background:var(--blue-dark);color:#fff;border-radius:6px;text-decoration:none;font-size:14px;">&#x1F517; 查看原文</a>
+      <a href="{{ paper.url }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;background:var(--blue-dark);color:#fff;border-radius:6px;text-decoration:none;font-size:14px;">&#x1F517; 查看原文</a>
       {% endif %}
       {% if paper.pdf_url %}
-      <a href="{{ paper.pdf_url }}" target="_blank" rel="noopener" class="btn-outline" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border:1px solid var(--blue-dark);color:var(--blue-dark);border-radius:6px;text-decoration:none;font-size:14px;">&#x1F4C4; 下载 PDF</a>
+      <a href="{{ paper.pdf_url }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border:1px solid var(--blue-dark);color:var(--blue-dark);border-radius:6px;text-decoration:none;font-size:14px;">&#x1F4C4; 下载 PDF</a>
       {% endif %}
-      <button onclick="alert('请先登录后再收藏')" class="btn-outline" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border:1px solid var(--accent);color:var(--accent);border-radius:6px;background:none;cursor:pointer;font-size:14px;">&#x2606; 收藏</button>
+      {% if user %}
+      <button id="favBtn" onclick="toggleFav()" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border:1px solid var(--accent);color:{% if is_favorited %}var(--accent){% else %}var(--accent){% endif %};border-radius:6px;background:{% if is_favorited %}#fef8e7{% else %}none{% endif %};cursor:pointer;font-size:14px;">{% if is_favorited %}&#9733; 已收藏{% else %}&#9734; 收藏{% endif %}</button>
+      {% else %}
+      <a href="/login" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border:1px solid var(--accent);color:var(--accent);border-radius:6px;text-decoration:none;font-size:14px;">&#9734; 收藏</a>
+      {% endif %}
     </div>
 
-    <!-- back -->
-    <a href="/papers" style="color:var(--blue-mid);text-decoration:none;font-size:14px;">&larr; 返回论文列表</a>
+    <!-- note area -->
+    {% if user %}
+    <div class="section-subtitle">我的笔记</div>
+    <textarea id="noteContent" maxlength="5000" placeholder="添加笔记..." style="width:100%;padding:12px;border:1px solid var(--border);border-radius:6px;font-size:14px;resize:vertical;min-height:100px;">{{ note_content }}</textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+      <span id="noteCount" style="font-size:12px;color:var(--text-light);">{{ note_content | length }}/5000</span>
+      <button id="saveNoteBtn" onclick="saveNote()" style="padding:6px 18px;background:var(--blue-dark);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;">保存笔记</button>
+    </div>
+    <div id="noteMsg" style="font-size:13px;margin-top:6px;"></div>
+    {% endif %}
 
+    <a href="/papers" style="display:inline-block;margin-top:24px;color:var(--blue-mid);text-decoration:none;font-size:14px;">&larr; 返回论文列表</a>
   </div>
 </div>
+
+{% if user %}
+<script>
+const token = localStorage.getItem('token');
+const paperId = {{ paper.id }};
+let isFav = {{ 'true' if is_favorited else 'false' }};
+
+async function toggleFav() {
+  if (isFav) {
+    const resp = await fetch('/api/user/favorites?item_type=paper', { headers: {'Authorization': 'Bearer ' + token} });
+    const favs = await resp.json();
+    const match = favs.find(f => f.item_id == paperId);
+    if (match) {
+      await fetch('/api/user/favorites/' + match.id, { method: 'DELETE', headers: {'Authorization': 'Bearer ' + token} });
+    }
+    isFav = false;
+    document.getElementById('favBtn').innerHTML = '&#9734; 收藏';
+    document.getElementById('favBtn').style.background = 'none';
+  } else {
+    const resp = await fetch('/api/user/favorites', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify({item_type: 'paper', item_id: paperId}),
+    });
+    if (resp.ok) {
+      isFav = true;
+      document.getElementById('favBtn').innerHTML = '&#9733; 已收藏';
+      document.getElementById('favBtn').style.background = '#fef8e7';
+    }
+  }
+}
+
+document.getElementById('noteContent').addEventListener('input', () => {
+  document.getElementById('noteCount').textContent = document.getElementById('noteContent').value.length + '/5000';
+});
+
+async function saveNote() {
+  const content = document.getElementById('noteContent').value;
+  const msg = document.getElementById('noteMsg');
+  try {
+    const resp = await fetch('/api/user/notes', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify({item_type: 'paper', item_id: paperId, content: content}),
+    });
+    if (resp.ok) {
+      msg.innerHTML = '<span style="color:#2d7a2d;">笔记已保存</span>';
+    } else {
+      const err = await resp.json();
+      msg.innerHTML = '<span style="color:#a04040;">' + (err.detail || '保存失败') + '</span>';
+    }
+  } catch(err) {
+    msg.innerHTML = '<span style="color:#a04040;">网络错误</span>';
+  }
+}
+</script>
+{% endif %}
 {% endblock %}
