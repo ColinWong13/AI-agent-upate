@@ -4,10 +4,11 @@
 
 {% block hero %}
 <div class="hero">
+  <span class="breaking-badge" style="margin-bottom:16px;">BREAKING</span>
   <h1>All the News<br>That's Fit to Print</h1>
   <p>追踪 AI 领域顶级学术论文、行业动态与竞品格局</p>
   <div class="meta">
-    <span class="badge">Vol. 2 · {{ now.strftime('%Y.%m.%d') if now else '' }}</span>
+    <span class="badge">Vol. 2 · {{ now.strftime('%Y.%m.%d') if now else '2026.05' }}</span>
     <span class="badge">学术追踪</span>
     <span class="badge">行业聚合</span>
     <span class="badge">竞品分析</span>
@@ -16,24 +17,46 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+
+<!-- marquee ticker -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span>arXiv cs.AI Daily Digest</span><span class="marquee-dot">&#x25CF;</span>
+    <span>New Papers: {{ paper_count }}+</span><span class="marquee-dot">&#x25CF;</span>
+    <span>Sources: arXiv · NeurIPS · ICML · CVPR · ACL · ICLR</span><span class="marquee-dot">&#x25CF;</span>
+    <span>Updated Every Morning at 08:00 Beijing Time</span><span class="marquee-dot">&#x25CF;</span>
+    <span>The Agent Report — Est. 2026</span><span class="marquee-dot">&#x25CF;</span>
+    <span>All the News That's Fit to Print</span><span class="marquee-dot">&#x25CF;</span>
+    <span>arXiv cs.AI Daily Digest</span><span class="marquee-dot">&#x25CF;</span>
+    <span>New Papers: {{ paper_count }}+</span><span class="marquee-dot">&#x25CF;</span>
+    <span>Sources: arXiv · NeurIPS · ICML · CVPR · ACL · ICLR</span><span class="marquee-dot">&#x25CF;</span>
+    <span>Updated Every Morning at 08:00 Beijing Time</span><span class="marquee-dot">&#x25CF;</span>
+    <span>The Agent Report — Est. 2026</span><span class="marquee-dot">&#x25CF;</span>
+    <span>All the News That's Fit to Print</span>
+  </div>
+</div>
+
+<!-- particle canvas -->
+<canvas id="particle-canvas"></canvas>
+
+<div class="container" style="position:relative;z-index:1;">
 
   <!-- stats row -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);margin-bottom:48px;">
-    <div class="stat-card" style="border-right:1px solid var(--border);">
-      <div class="stat-number" style="color:var(--fg);">{{ paper_count }}</div>
+    <div class="stat-card animate-in delay-1" style="border-right:1px solid var(--border);">
+      <div class="stat-number">{{ paper_count }}</div>
       <div class="stat-label">Papers Indexed</div>
     </div>
-    <div class="stat-card" style="border-right:1px solid var(--border);">
-      <div class="stat-number" style="color:var(--fg);">{{ news_count }}</div>
+    <div class="stat-card animate-in delay-2" style="border-right:1px solid var(--border);">
+      <div class="stat-number">{{ news_count }}</div>
       <div class="stat-label">News Briefs</div>
     </div>
-    <div class="stat-card" style="border-right:1px solid var(--border);">
-      <div class="stat-number" style="color:var(--fg);">{{ section_count }}</div>
+    <div class="stat-card animate-in delay-3" style="border-right:1px solid var(--border);">
+      <div class="stat-number">{{ section_count }}</div>
       <div class="stat-label">Report Sections</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-number" style="color:var(--fg);">{{ user_count }}</div>
+    <div class="stat-card animate-in delay-4">
+      <div class="stat-number">{{ user_count }}</div>
       <div class="stat-label">Subscribers</div>
     </div>
   </div>
@@ -42,10 +65,10 @@
   <div class="ornament">&#x2727;</div>
 
   <!-- about -->
-  <div style="max-width:680px;margin:0 auto 48px;text-align:center;">
+  <div style="max-width:680px;margin:0 auto 48px;text-align:center;" class="reveal">
     <p style="font-family:var(--font-body);color:var(--neutral-600);font-size:15px;line-height:2;font-style:italic;">
       The Agent Report 面向 AI 从业者与研究者打造。每日自动追踪顶级学术来源的最新论文，
-      聚合行业前沿动态，提供深度的 AI Agent 竞品分析报告。支持个人收藏与笔记管理，
+      聚合行业前沿动态，提供深度的 <span class="red-accent">AI Agent 竞品分析报告</span>。支持个人收藏与笔记管理，
       构建你的 AI 知识体系。
     </p>
   </div>
@@ -55,22 +78,56 @@
 
   <!-- feature links -->
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));border:1px solid var(--border);">
-    <a href="/report" class="feature-card" style="border-right:1px solid var(--border);">
-      <div class="fc-icon" style="font-family:var(--font-display);font-size:2rem;">I.</div>
+    <a href="/report" class="feature-card reveal" style="border-right:1px solid var(--border);">
+      <div class="fc-icon">I.</div>
       <div class="fc-title">竞品深度分析</div>
       <div class="fc-desc">深度解析主流 Agent 平台与三大垂直赛道（Data / Finance / Research）竞争格局</div>
     </a>
-    <a href="/papers" class="feature-card" style="border-right:1px solid var(--border);">
-      <div class="fc-icon" style="font-family:var(--font-display);font-size:2rem;">II.</div>
+    <a href="/papers" class="feature-card reveal" style="border-right:1px solid var(--border);">
+      <div class="fc-icon">II.</div>
       <div class="fc-title">学术论文板块</div>
       <div class="fc-desc">自动汇聚 arXiv · NeurIPS · ICML · CVPR · ACL 等顶刊最新论文，支持搜索与筛选</div>
     </a>
-    <a href="/news" class="feature-card">
-      <div class="fc-icon" style="font-family:var(--font-display);font-size:2rem;">III.</div>
+    <a href="/news" class="feature-card reveal">
+      <div class="fc-icon">III.</div>
       <div class="fc-title">行业动态追踪</div>
       <div class="fc-desc">持续收录 AI 领域资讯、视频周报与开源动态，一站掌握前沿信息</div>
     </a>
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// particle canvas
+(function(){
+  const c = document.getElementById('particle-canvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  let w,h,particles=[];
+  function resize(){ w=c.width=window.innerWidth; h=c.height=window.innerHeight; }
+  resize(); window.addEventListener('resize',resize);
+  for(let i=0;i<40;i++) particles.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.5+0.5,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3});
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='rgba(17,17,17,0.12)';
+    for(let p of particles){
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>w) p.vx*=-1;
+      if(p.y<0||p.y>h) p.vy*=-1;
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// scroll reveal
+(function(){
+  const els=document.querySelectorAll('.reveal');
+  const obs=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:0.15});
+  els.forEach(el=>obs.observe(el));
+})();
+</script>
 {% endblock %}
