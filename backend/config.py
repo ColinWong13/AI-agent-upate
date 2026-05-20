@@ -34,3 +34,8 @@ CRAWL_INTERVAL_HOURS = int(os.getenv("CRAWL_INTERVAL_HOURS", "6"))
 CRAWL_RETRY_DELAY_MINUTES = 30
 CRAWL_MAX_RETRIES = 3
 CRAWL_REQUEST_DELAY_SECONDS = 3
+
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
+LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:11434")
+LLM_MODEL = os.getenv("LLM_MODEL", "qwen2.5:7b")
+LLM_API_KEY = os.getenv("LLM_API_KEY", "")

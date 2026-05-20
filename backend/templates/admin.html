@@ -12,6 +12,44 @@
 {% block content %}
 <div class="container" style="max-width:700px;">
 
+  <!-- LLM Configuration -->
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:32px;box-shadow:var(--shadow);">
+    <div class="section-subtitle" style="margin-top:0;">LLM 模型配置</div>
+    <p style="font-size:11px;color:var(--neutral-500);margin-bottom:14px;">配置用于生成周报摘要的大模型。默认使用本地 Ollama (qwen2.5:7b)，也可接入 OpenAI 兼容 API。</p>
+    <form id="llmConfigForm" style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Provider</label>
+        <select name="provider" style="width:100%;padding:8px 12px;font-family:var(--font-mono);font-size:11px;background:transparent;border:1px solid var(--border);border-radius:4px;">
+          <option value="ollama">Ollama (本地免费)</option>
+          <option value="openai">OpenAI 兼容 API</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">API Base URL</label>
+        <input name="base_url" placeholder="http://localhost:11434" style="width:100%;padding:8px 12px;font-family:var(--font-mono);font-size:11px;background:transparent;border:1px solid var(--border);border-radius:4px;">
+      </div>
+      <div>
+        <label style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Model Name</label>
+        <input name="model" placeholder="qwen2.5:7b" style="width:100%;padding:8px 12px;font-family:var(--font-mono);font-size:11px;background:transparent;border:1px solid var(--border);border-radius:4px;">
+      </div>
+      <div>
+        <label style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">API Key (OpenAI 兼容时需要)</label>
+        <input name="api_key" type="password" placeholder="sk-..." style="width:100%;padding:8px 12px;font-family:var(--font-mono);font-size:11px;background:transparent;border:1px solid var(--border);border-radius:4px;">
+      </div>
+      <button type="submit" class="btn btn-primary" style="justify-content:center;">保存 LLM 配置</button>
+    </form>
+    <div id="llmConfigMsg" style="margin-top:10px;font-size:11px;"></div>
+  </div>
+
+  <!-- Crawler Control -->
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:32px;box-shadow:var(--shadow);">
+    <div class="section-subtitle" style="margin-top:0;">论文爬虫</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="triggerCrawlBtn" onclick="triggerCrawl()" class="btn btn-outline" style="padding:6px 14px;font-size:10px;">&#x21BB; 立即爬取全部论文源</button>
+      <span id="crawlStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--neutral-500);"></span>
+    </div>
+  </div>
+
   <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:32px;box-shadow:var(--shadow);">
     <div class="section-subtitle" style="margin-top:0;">添加新动态</div>
     <form id="addForm" style="display:flex;flex-direction:column;gap:12px;">
@@ -49,6 +87,64 @@
 </div>
 
 <script>
+// Load current LLM config on page load
+(async function loadLlmConfig() {
+  try {
+    const resp = await fetch('/api/digest/config/llm');
+    const cfg = await resp.json();
+    const form = document.getElementById('llmConfigForm');
+    form.provider.value = cfg.provider || 'ollama';
+    form.base_url.value = cfg.base_url || 'http://localhost:11434';
+    form.model.value = cfg.model || 'qwen2.5:7b';
+    form.api_key.value = cfg.api_key || '';
+  } catch(e) { /* ignore */ }
+})();
+
+document.getElementById('llmConfigForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const msg = document.getElementById('llmConfigMsg');
+  const data = {
+    provider: form.provider.value,
+    base_url: form.base_url.value,
+    model: form.model.value,
+    api_key: form.api_key.value,
+  };
+  try {
+    const resp = await fetch('/api/digest/config/llm', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data),
+    });
+    if (resp.ok) {
+      msg.innerHTML = '<span style="color:var(--accent-3);">LLM 配置已保存</span>';
+    } else {
+      msg.innerHTML = '<span style="color:#f87171;">保存失败</span>';
+    }
+  } catch(err) {
+    msg.innerHTML = '<span style="color:#f87171;">网络错误</span>';
+  }
+});
+
+async function triggerCrawl() {
+  const btn = document.getElementById('triggerCrawlBtn');
+  const status = document.getElementById('crawlStatus');
+  btn.disabled = true;
+  btn.textContent = 'CRAWLING...';
+  status.textContent = '正在爬取...';
+  try {
+    const resp = await fetch('/api/papers/crawl', { method: 'POST' });
+    const data = await resp.json();
+    if (data.status === 'completed') {
+      status.innerHTML = '<span style="color:var(--fg);">完成: ' + data.total_fetched + ' fetched, ' + data.total_saved + ' new</span>';
+    }
+  } catch(e) {
+    status.textContent = '网络错误';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↻ 立即爬取全部论文源';
+  }
+}
 document.getElementById('addForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;

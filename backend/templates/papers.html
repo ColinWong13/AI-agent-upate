@@ -20,18 +20,68 @@
 {% block content %}
 <div class="container">
 
-  <form method="get" action="/papers" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px;align-items:center;">
-    <select name="source" style="padding:8px 14px;font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;background:transparent;border:none;border-bottom:2px solid var(--fg);">
-      <option value="">ALL SOURCES</option>
-      <option value="arxiv" {% if source == 'arxiv' %}selected{% endif %}>arXiv</option>
-      <option value="neurips" {% if source == 'neurips' %}selected{% endif %}>NeurIPS</option>
-      <option value="iclr" {% if source == 'iclr' %}selected{% endif %}>ICLR</option>
-      <option value="icml" {% if source == 'icml' %}selected{% endif %}>ICML</option>
-      <option value="acl" {% if source == 'acl' %}selected{% endif %}>ACL</option>
-      <option value="cvpr" {% if source == 'cvpr' %}selected{% endif %}>CVPR</option>
-    </select>
-    <input type="text" name="keyword" value="{{ keyword or '' }}" placeholder="Search title or abstract..." style="flex:1;min-width:180px;padding:8px 0;font-family:var(--font-mono);font-size:12px;background:transparent;border:none;border-bottom:2px solid var(--fg);">
-    <button type="submit" class="btn btn-primary" style="padding:8px 18px;font-size:10px;">SEARCH</button>
+  <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:12px;gap:12px;">
+    <button id="triggerCrawlBtn" onclick="triggerCrawl()" class="btn btn-outline" style="padding:6px 14px;font-size:10px;">&#x21BB; 立即爬取</button>
+    <span id="crawlStatus" style="font-family:var(--font-mono);font-size:10px;color:var(--neutral-500);"></span>
+  </div>
+
+  <!-- Weekly Digest Bulletin Board -->
+  {% if latest_digest %}
+  <div class="digest-board">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="section-subtitle" style="margin:0;">&#x1F4F0; {{ latest_digest.title }}</div>
+      <span style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--neutral-400);">{{ latest_digest.week_start }} ~ {{ latest_digest.week_end }}</span>
+    </div>
+    <div class="digest-content">
+      {{ latest_digest.content | safe }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if past_digests %}
+  <details class="digest-archive">
+    <summary>往期周报 ({{ past_digests|length }})</summary>
+    <div style="padding:12px;">
+      {% for d in past_digests %}
+      <details class="digest-item">
+        <summary>{{ d.title }} · {{ d.created_at.strftime('%Y-%m-%d') if d.created_at else '' }}</summary>
+        <div class="digest-content">
+          {{ d.content | safe }}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
+  <form method="get" action="/papers" style="margin-bottom:24px;">
+    <!-- Venue multi-select -->
+    <div class="venue-group" style="margin-bottom:12px;">
+      {% set selected_sources = (sources or source or '').split(',') %}
+      {% for v in ['arxiv','neurips','iclr','icml','acl','cvpr'] %}
+      <label>
+        <input type="checkbox" name="sources" value="{{ v }}" {% if v in selected_sources %}checked{% endif %}>
+        {{ v }}
+      </label>
+      {% endfor %}
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+      <!-- Date range -->
+      <div style="display:flex;align-items:center;gap:0;">
+        <input type="date" name="date_from" value="{{ date_from or '' }}" placeholder="From">
+        <span style="padding:0 8px;font-family:var(--font-mono);font-size:10px;color:var(--neutral-400);">—</span>
+        <input type="date" name="date_to" value="{{ date_to or '' }}" placeholder="To">
+      </div>
+
+      <!-- Keyword -->
+      <input type="text" name="keyword" value="{{ keyword or '' }}" placeholder="Search title or abstract..." style="flex:1;min-width:180px;padding:8px 0;font-family:var(--font-mono);font-size:12px;background:transparent;border:none;border-bottom:2px solid var(--fg);">
+
+      <button type="submit" class="btn btn-primary" style="padding:8px 18px;font-size:10px;">FILTER</button>
+      {% if sources or source or keyword or date_from or date_to %}
+      <a href="/papers" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--neutral-500);text-decoration:none;">CLEAR</a>
+      {% endif %}
+    </div>
   </form>
 
   {% if papers %}
@@ -61,11 +111,11 @@
   {% if total_pages > 1 %}
   <div style="display:flex;justify-content:center;gap:0;margin-top:0;border:1px solid var(--border);border-top:none;padding:12px;">
     {% if page > 1 %}
-    <a href="/papers?source={{ source or '' }}&keyword={{ keyword or '' }}&page={{ page - 1 }}" class="btn btn-outline" style="padding:6px 20px;font-size:10px;">&larr; PREV</a>
+    <a href="/papers?page={{ page - 1 }}{{ filter_qs }}" class="btn btn-outline" style="padding:6px 20px;font-size:10px;">&larr; PREV</a>
     {% endif %}
     <span style="padding:6px 20px;font-family:var(--font-mono);font-size:10px;color:var(--neutral-500);">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}
-    <a href="/papers?source={{ source or '' }}&keyword={{ keyword or '' }}&page={{ page + 1 }}" class="btn btn-outline" style="padding:6px 20px;font-size:10px;">NEXT &rarr;</a>
+    <a href="/papers?page={{ page + 1 }}{{ filter_qs }}" class="btn btn-outline" style="padding:6px 20px;font-size:10px;">NEXT &rarr;</a>
     {% endif %}
   </div>
   {% endif %}
@@ -81,6 +131,28 @@
 </div>
 
 <script>
+async function triggerCrawl() {
+  const btn = document.getElementById('triggerCrawlBtn');
+  const status = document.getElementById('crawlStatus');
+  btn.disabled = true;
+  btn.textContent = 'CRAWLING...';
+  status.textContent = '正在爬取全部来源...';
+  status.style.color = 'var(--neutral-500)';
+  try {
+    const resp = await fetch('/api/papers/crawl', { method: 'POST' });
+    const data = await resp.json();
+    if (data.status === 'completed') {
+      status.innerHTML = '<span style="color:var(--fg);">完成: ' + data.total_fetched + ' 篇获取, ' + data.total_saved + ' 篇新增</span>';
+      setTimeout(() => location.reload(), 1500);
+    }
+  } catch(e) {
+    status.textContent = '网络错误';
+    status.style.color = 'var(--accent)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↻ 立即爬取';
+  }
+}
 async function toggleFav(btn, e) { e.preventDefault(); e.stopPropagation();
   const token = localStorage.getItem('token'); if (!token) { location.href='/login'; return; }
   const id = btn.dataset.id, type = btn.dataset.type;

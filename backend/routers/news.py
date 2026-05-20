@@ -25,6 +25,14 @@ class NewsUpdate(BaseModel):
     category: str | None = None
 
 
+@router.post("/crawl")
+async def trigger_news_crawl():
+    """Manually trigger news RSS crawler."""
+    from crawlers.news_crawler import crawl
+    result = await crawl()
+    return result
+
+
 @router.get("")
 async def list_news(
     category: str | None = Query(None),

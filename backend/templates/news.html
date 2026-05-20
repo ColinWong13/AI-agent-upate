@@ -17,6 +17,35 @@
 {% block content %}
 <div class="container">
 
+  <!-- Weekly News Digest Bulletin Board -->
+  {% if latest_digest %}
+  <div class="digest-board">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="section-subtitle" style="margin:0;">&#x1F4E8; {{ latest_digest.title }}</div>
+      <span style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--neutral-400);">{{ latest_digest.week_start }} ~ {{ latest_digest.week_end }}</span>
+    </div>
+    <div class="digest-content">
+      {{ latest_digest.content | safe }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if past_digests %}
+  <details class="digest-archive">
+    <summary>往期行业周报 ({{ past_digests|length }})</summary>
+    <div style="padding:12px;">
+      {% for d in past_digests %}
+      <details class="digest-item">
+        <summary>{{ d.title }} · {{ d.created_at.strftime('%Y-%m-%d') if d.created_at else '' }}</summary>
+        <div class="digest-content">
+          {{ d.content | safe }}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+
   <div style="display:flex;flex-wrap:wrap;gap:0;margin-bottom:24px;align-items:center;border:1px solid var(--border);">
     {% set active = active_category or '' %}
     <a href="/news" class="btn-filter" style="padding:8px 16px;text-decoration:none;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;border-right:1px solid var(--border);{% if not active %}background:var(--fg);color:var(--bg);{% else %}background:transparent;color:var(--neutral-600);{% endif %}">全部</a>

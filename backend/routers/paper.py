@@ -66,6 +66,45 @@ async def list_papers(
     }
 
 
+@router.post("/crawl")
+async def trigger_crawl():
+    """Manually trigger all paper crawlers concurrently."""
+    import asyncio
+    import logging
+    from crawlers import arxiv, neurips, iclr, icml, acl, cvpr
+
+    logger = logging.getLogger(__name__)
+
+    crawlers = {
+        "arxiv": arxiv.crawl,
+        "neurips": neurips.crawl,
+        "iclr": iclr.crawl,
+        "icml": icml.crawl,
+        "acl": acl.crawl,
+        "cvpr": cvpr.crawl,
+    }
+
+    async def _run(name, fn, results):
+        try:
+            results[name] = await fn()
+        except Exception as e:
+            logger.error(f"Crawler {name} failed: {e}")
+            results[name] = {"error": str(e)}
+
+    results = {}
+    tasks = [_run(name, fn, results) for name, fn in crawlers.items()]
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+    total_fetched = sum(r.get("fetched", 0) for r in results.values() if isinstance(r, dict))
+    total_saved = sum(r.get("saved", 0) for r in results.values() if isinstance(r, dict))
+    return {
+        "status": "completed",
+        "total_fetched": total_fetched,
+        "total_saved": total_saved,
+        "details": results,
+    }
+
+
 @router.get("/stats")
 async def paper_stats(db: AsyncSession = Depends(get_db)):
     # Count by source

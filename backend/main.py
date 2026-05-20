@@ -12,7 +12,7 @@ from models.report import ReportSection
 from models.paper import Paper
 from models.user import User, UserFavorite, UserNote
 from auth import current_user
-from routers import report, paper, news, user
+from routers import report, paper, news, user, digest
 
 env = Environment(loader=FileSystemLoader("templates"))
 
@@ -31,12 +31,13 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
-app = FastAPI(title="AI Agent Platform", version="2.3.0", lifespan=lifespan)
+app = FastAPI(title="AI Agent Platform", version="2.5.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(report.router)
 app.include_router(paper.router)
 app.include_router(news.router)
 app.include_router(user.router)
+app.include_router(digest.router)
 
 
 async def get_all_sections(db: AsyncSession):
@@ -87,34 +88,102 @@ async def page_report_section(section_key: str, user: User | None = Depends(curr
 @app.get("/papers", response_class=HTMLResponse)
 async def page_papers(
     source: str | None = None,
+    sources: str | None = None,
     keyword: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
     page: int = 1,
     user: User | None = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    from datetime import date as date_type
+
     q = select(Paper)
-    if source:
+
+    # Support both single source (backward compat) and multi sources (comma-separated)
+    source_list = None
+    if sources:
+        source_list = [s.strip() for s in sources.split(",") if s.strip()]
+        if source_list:
+            q = q.where(Paper.source.in_(source_list))
+    elif source:
         q = q.where(Paper.source == source)
+
     if keyword:
         pattern = f"%{keyword}%"
         q = q.where((Paper.title.ilike(pattern)) | (Paper.abstract.ilike(pattern)))
+    if date_from:
+        try:
+            q = q.where(Paper.published_date >= date_type.fromisoformat(date_from))
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            q = q.where(Paper.published_date <= date_type.fromisoformat(date_to))
+        except ValueError:
+            pass
+
     q = q.order_by(Paper.published_date.desc(), Paper.id.desc())
     q = q.offset((page - 1) * 20).limit(20)
     result = await db.execute(q)
     papers = result.scalars().all()
 
     count_q = select(func.count()).select_from(Paper)
-    if source:
+    if source_list:
+        count_q = count_q.where(Paper.source.in_(source_list))
+    elif source:
         count_q = count_q.where(Paper.source == source)
     if keyword:
         count_q = count_q.where((Paper.title.ilike(pattern)) | (Paper.abstract.ilike(pattern)))
+    if date_from:
+        try:
+            count_q = count_q.where(Paper.published_date >= date_type.fromisoformat(date_from))
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            count_q = count_q.where(Paper.published_date <= date_type.fromisoformat(date_to))
+        except ValueError:
+            pass
     total = (await db.execute(count_q)).scalar() or 0
 
     favorites = await get_favorites_map(db, user, "paper")
 
-    return render("papers.html", papers=papers, source=source, keyword=keyword,
+    # Build query string for pagination
+    filter_params = []
+    if sources:
+        filter_params.append(f"sources={sources}")
+    elif source:
+        filter_params.append(f"source={source}")
+    if keyword:
+        filter_params.append(f"keyword={keyword}")
+    if date_from:
+        filter_params.append(f"date_from={date_from}")
+    if date_to:
+        filter_params.append(f"date_to={date_to}")
+    filter_qs = "&" + "&".join(filter_params) if filter_params else ""
+
+    # Fetch paper weekly digests
+    from models.weekly_digest import WeeklyDigest
+    digest_result = await db.execute(
+        select(WeeklyDigest).where(
+            WeeklyDigest.digest_type == "paper", WeeklyDigest.is_latest == True
+        )
+    )
+    latest_digest = digest_result.scalar_one_or_none()
+
+    past_result = await db.execute(
+        select(WeeklyDigest).where(
+            WeeklyDigest.digest_type == "paper", WeeklyDigest.is_latest == False
+        ).order_by(WeeklyDigest.created_at.desc())
+    )
+    past_digests = past_result.scalars().all()
+
+    return render("papers.html", papers=papers, source=source, sources=sources,
+                  keyword=keyword, date_from=date_from, date_to=date_to,
                   page=page, total=total, current_page="papers", user=user,
-                  favorites=favorites)
+                  favorites=favorites, filter_qs=filter_qs,
+                  latest_digest=latest_digest, past_digests=past_digests)
 
 
 @app.get("/papers/{paper_id}", response_class=HTMLResponse)
@@ -169,9 +238,26 @@ async def page_news(
 
     favorites = await get_favorites_map(db, user, "news")
 
+    # Fetch news weekly digests
+    from models.weekly_digest import WeeklyDigest
+    digest_result = await db.execute(
+        select(WeeklyDigest).where(
+            WeeklyDigest.digest_type == "news", WeeklyDigest.is_latest == True
+        )
+    )
+    latest_digest = digest_result.scalar_one_or_none()
+
+    past_result = await db.execute(
+        select(WeeklyDigest).where(
+            WeeklyDigest.digest_type == "news", WeeklyDigest.is_latest == False
+        ).order_by(WeeklyDigest.created_at.desc())
+    )
+    past_digests = past_result.scalars().all()
+
     return render("news.html", news_items=items, categories=categories,
                   active_category=category, page=page, total=total, current_page="news",
-                  user=user, favorites=favorites)
+                  user=user, favorites=favorites,
+                  latest_digest=latest_digest, past_digests=past_digests)
 
 
 @app.get("/admin", response_class=HTMLResponse)
@@ -244,4 +330,4 @@ async def page_notes(user: User | None = Depends(current_user), db: AsyncSession
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "version": "2.3.0"}
+    return {"status": "ok", "version": "2.5.0"}

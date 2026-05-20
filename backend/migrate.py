@@ -73,7 +73,6 @@ SECTION_META = {
     "skills": {"title": "四、面向产品研发的 Agent Skills", "sort_order": 4},
     "cc": {"title": "五、Claude Code 配置指南", "sort_order": 5},
     "summary": {"title": "六、总结与建议", "sort_order": 6},
-    "news": {"title": "七、行业动态", "sort_order": 7},
 }
 
 
@@ -95,14 +94,6 @@ def extract_sections() -> list[dict]:
         if title_div:
             title_div.decompose()
         inner = "".join(str(c) for c in inner_soup.contents)
-        # For sections that are wrappers (like data), include the video section wrapper etc.
-        # The news section has an outer wrapping div, grab more context
-        if section_id == "news":
-            parent = el.parent
-            if parent and parent.name == "div" and "container" in parent.get("class", []):
-                parent = parent.parent
-            inner = "".join(str(c) for c in parent.contents) if parent else inner
-
         inner = transform_colors(inner)
         sections.append({
             "section_key": section_id,
@@ -158,5 +149,19 @@ def migrate():
     print("Migration complete.")
 
 
+def cleanup_news_section():
+    """Remove the 'news' section from report_sections table."""
+    with SyncSessionLocal() as db:
+        section = db.query(ReportSection).filter_by(section_key="news").first()
+        if section:
+            db.delete(section)
+            db.commit()
+            print("Removed 'news' section from report_sections.")
+        else:
+            print("News section not found, nothing to delete.")
+
+
 if __name__ == "__main__":
     migrate()
+    cleanup_news_section()
+    print("Migration and cleanup complete.")

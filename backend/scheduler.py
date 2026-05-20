@@ -7,6 +7,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from crawlers import arxiv, neurips, iclr, icml, acl, cvpr
+from crawlers.news_crawler import crawl as news_crawl
+from services.digest import generate_paper_digest, generate_news_digest
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +70,35 @@ def start():
         replace_existing=True,
     )
 
+    # News RSS crawl: every 6 hours at minute 17
+    scheduler.add_job(
+        news_crawl,
+        CronTrigger(hour="0,6,12,18", minute=17),
+        id="news_rss_periodic",
+        name="News RSS crawl every 6 hours",
+        replace_existing=True,
+    )
+
+    # Paper weekly digest: Sunday at 20:00 Beijing time (UTC 12:00)
+    scheduler.add_job(
+        generate_paper_digest,
+        CronTrigger(day_of_week="sun", hour=12, minute=7),
+        id="paper_digest_weekly",
+        name="Weekly paper digest generation",
+        replace_existing=True,
+    )
+
+    # News weekly digest: Sunday at 20:30 Beijing time (UTC 12:30)
+    scheduler.add_job(
+        generate_news_digest,
+        CronTrigger(day_of_week="sun", hour=12, minute=37),
+        id="news_digest_weekly",
+        name="Weekly news digest generation",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started: arxiv daily, neurips/iclr/icml/acl/cvpr weekly")
+    logger.info("Scheduler started: arxiv daily, neurips/iclr/icml/acl/cvpr weekly, paper/news digest weekly")
 
 
 def shutdown():
