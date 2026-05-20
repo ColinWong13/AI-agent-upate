@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+import asyncio
+from datetime import date, timedelta
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -179,6 +181,16 @@ async def page_papers(
     )
     past_digests = past_result.scalars().all()
 
+    # Auto-generate digest if missing for current week
+    stale = (
+        latest_digest is None
+        or latest_digest.week_end is None
+        or latest_digest.week_end < date.today() - timedelta(days=7)
+    )
+    if stale:
+        from services.digest import generate_paper_digest
+        asyncio.create_task(generate_paper_digest())
+
     return render("papers.html", papers=papers, source=source, sources=sources,
                   keyword=keyword, date_from=date_from, date_to=date_to,
                   page=page, total=total, current_page="papers", user=user,
@@ -253,6 +265,16 @@ async def page_news(
         ).order_by(WeeklyDigest.created_at.desc())
     )
     past_digests = past_result.scalars().all()
+
+    # Auto-generate digest if missing for current week
+    stale = (
+        latest_digest is None
+        or latest_digest.week_end is None
+        or latest_digest.week_end < date.today() - timedelta(days=7)
+    )
+    if stale:
+        from services.digest import generate_news_digest
+        asyncio.create_task(generate_news_digest())
 
     return render("news.html", news_items=items, categories=categories,
                   active_category=category, page=page, total=total, current_page="news",
