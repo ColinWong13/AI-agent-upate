@@ -27,9 +27,13 @@ class NewsUpdate(BaseModel):
 
 @router.post("/crawl")
 async def trigger_news_crawl():
-    """Manually trigger news RSS crawler."""
+    """Manually trigger news RSS crawler, then regenerate digest."""
     from crawlers.news_crawler import crawl
     result = await crawl()
+    # Generate fresh digest after new items are saved
+    if result.get("saved", 0) > 0:
+        from services.digest import generate_news_digest
+        await generate_news_digest()
     return result
 
 

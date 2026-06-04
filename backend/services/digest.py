@@ -44,7 +44,16 @@ async def generate_paper_digest() -> dict | None:
         papers = result.scalars().all()
 
         if not papers:
-            logger.info("No papers found for weekly digest")
+            logger.info("No papers in 7-day window, falling back to most recent papers")
+            fallback = await db.execute(
+                select(Paper)
+                .order_by(Paper.published_date.desc())
+                .limit(100)
+            )
+            papers = fallback.scalars().all()
+
+        if not papers:
+            logger.info("No papers at all in database")
             return None
 
         paper_texts = []
@@ -96,7 +105,16 @@ async def generate_news_digest() -> dict | None:
         items = result.scalars().all()
 
         if not items:
-            logger.info("No news items found for weekly digest")
+            logger.info("No news items in 7-day window, falling back to most recent news")
+            fallback = await db.execute(
+                select(NewsItem)
+                .order_by(NewsItem.published_date.desc())
+                .limit(50)
+            )
+            items = fallback.scalars().all()
+
+        if not items:
+            logger.info("No news items at all in database")
             return None
 
         news_texts = []

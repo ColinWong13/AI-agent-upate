@@ -16,6 +16,14 @@
 {% endblock %}
 
 {% block content %}
+
+<nav id="report-toc">
+  <div class="toc-title">目录</div>
+  {% for section in sections %}
+  <a href="#{{ section.section_key }}" class="toc-link" data-target="{{ section.section_key }}">{{ section.title }}</a>
+  {% endfor %}
+</nav>
+
 <div class="container">
 {% for section in sections %}
 <div class="section" id="{{ section.section_key }}">
@@ -24,4 +32,41 @@
 </div>
 {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+  const links = document.querySelectorAll('.toc-link');
+  const sections = [...document.querySelectorAll('.section')].map(el => ({
+    id: el.id,
+    top: 0
+  }));
+
+  function updatePositions() {
+    sections.forEach(s => {
+      const el = document.getElementById(s.id);
+      s.top = el ? el.getBoundingClientRect().top + window.scrollY - 120 : 0;
+    });
+  }
+  updatePositions();
+
+  function onScroll() {
+    let current = sections[0]?.id || '';
+    for (let i = sections.length - 1; i >= 0; i--) {
+      if (window.scrollY >= sections[i].top) {
+        current = sections[i].id;
+        break;
+      }
+    }
+    links.forEach(a => {
+      a.classList.toggle('active', a.dataset.target === current);
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, {passive: true});
+  window.addEventListener('resize', () => { updatePositions(); onScroll(); });
+  onScroll();
+})();
+</script>
 {% endblock %}

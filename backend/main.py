@@ -189,7 +189,14 @@ async def page_papers(
     )
     if stale:
         from services.digest import generate_paper_digest
-        asyncio.create_task(generate_paper_digest())
+        await generate_paper_digest()
+        # Re-query fresh digest
+        new_digest = await db.execute(
+            select(WeeklyDigest).where(
+                WeeklyDigest.digest_type == "paper", WeeklyDigest.is_latest == True
+            )
+        )
+        latest_digest = new_digest.scalar_one_or_none()
 
     return render("papers.html", papers=papers, source=source, sources=sources,
                   keyword=keyword, date_from=date_from, date_to=date_to,
@@ -274,7 +281,14 @@ async def page_news(
     )
     if stale:
         from services.digest import generate_news_digest
-        asyncio.create_task(generate_news_digest())
+        await generate_news_digest()
+        # Re-query fresh digest
+        new_digest = await db.execute(
+            select(WeeklyDigest).where(
+                WeeklyDigest.digest_type == "news", WeeklyDigest.is_latest == True
+            )
+        )
+        latest_digest = new_digest.scalar_one_or_none()
 
     return render("news.html", news_items=items, categories=categories,
                   active_category=category, page=page, total=total, current_page="news",
