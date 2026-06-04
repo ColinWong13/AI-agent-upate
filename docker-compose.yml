@@ -2,14 +2,19 @@ version: "3.9"
 
 services:
   app:
-    build: ./backend
+    build: .
     ports:
       - "8000:8000"
     environment:
+      - USE_SQLITE=${USE_SQLITE:-true}
       - DATABASE_URL=postgresql+asyncpg://aiagent:aiagent123@db:5432/ai_agent_platform
       - DATABASE_URL_SYNC=postgresql+psycopg2://aiagent:aiagent123@db:5432/ai_agent_platform
       - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET=change-this-in-production
+      - JWT_SECRET=${JWT_SECRET:-change-this-in-production}
+      - LLM_PROVIDER=${LLM_PROVIDER:-ollama}
+      - LLM_BASE_URL=http://ollama:11434
+      - LLM_MODEL=${LLM_MODEL:-qwen2.5:7b}
+      - LLM_API_KEY=${LLM_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -41,6 +46,23 @@ services:
     volumes:
       - redisdata:/data
 
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollamadata:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles:
+      - gpu
+
 volumes:
   pgdata:
   redisdata:
+  ollamadata:
